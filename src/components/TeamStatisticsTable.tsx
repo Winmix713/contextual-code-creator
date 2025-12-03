@@ -1,0 +1,1 @@
+// TeamStatisticsTable component

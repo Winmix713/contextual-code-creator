@@ -1,0 +1,1 @@
+// ModelRegistryTable component

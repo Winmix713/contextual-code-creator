@@ -9,13 +9,11 @@ import {
   Database, 
   Cpu, 
   HardDrive, 
-  Wifi, 
   Shield, 
   Settings, 
   ExternalLink,
   Clock,
   TrendingUp,
-  TrendingDown,
   Info,
   Loader2,
   PlayCircle
@@ -24,10 +22,9 @@ import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import AuthGate from "@/components/AuthGate";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -816,7 +813,7 @@ export default function MonitoringPage() {
             </div>
 
             {/* Computation Graph */}
-            <ComputationMapDashboard graph={graphQuery.data ?? null} />
+            <ComputationMapDashboard nodes={graphQuery.data?.nodes ?? []} />
 
             {/* Recent Alerts Table */}
             <Card className="border-border/60 bg-muted/20">

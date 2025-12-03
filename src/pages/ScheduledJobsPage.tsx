@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { RefreshCcw, Play, Pause, Edit, Trash2, Plus, Clock, Settings, Activity, AlertTriangle, CheckCircle } from "lucide-react";
+import { RefreshCcw, Pause, Plus, Settings, Activity, AlertTriangle, CheckCircle } from "lucide-react";
 import AuthGate from "@/components/AuthGate";
 import JobStatusCard from "@/components/jobs/JobStatusCard";
 import { JobLogsDialog } from "@/components/jobs/JobLogsDialog";
@@ -10,11 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -27,7 +25,6 @@ import type {
   JobToggleResponse,
   JobTriggerResponse,
   JobFormData,
-  CronValidation,
   JobType
 } from "@/types/admin";
 import PageLayout from "@/components/layout/PageLayout";
@@ -68,15 +65,6 @@ const deleteJob = async (id: string): Promise<void> => {
   if (error) throw new Error(error.message);
 };
 
-const validateCron = async (cronExpression: string): Promise<CronValidation> => {
-  const { data, error } = await supabase.functions.invoke<CronValidation>("jobs-validate-cron", {
-    body: { cronExpression }
-  });
-
-  if (error) throw new Error(error.message);
-  return data || { valid: false };
-};
-
 const JOB_TYPES: Array<{ value: JobType; label: string; description: string }> = [
   { value: 'data_import', label: 'Data Import', description: 'Import data from external sources' },
   { value: 'prediction', label: 'Prediction', description: 'Run AI predictions' },
@@ -100,8 +88,6 @@ export default function ScheduledJobsPage() {
   const queryClient = useQueryClient();
   const [selectedJob, setSelectedJob] = useState<JobSummary | null>(null);
   const [logsOpen, setLogsOpen] = useState(false);
-  const [toggleJobId, setToggleJobId] = useState<string | null>(null);
-  const [runJobId, setRunJobId] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedJobForEdit, setSelectedJobForEdit] = useState<JobSummary | null>(null);
@@ -173,10 +159,6 @@ export default function ScheduledJobsPage() {
     queryFn: fetchLogs,
     enabled: logsOpen && Boolean(selectedJob),
     refetchOnWindowFocus: false,
-    onError: (err) => {
-      const message = err instanceof Error ? err.message : "Failed to load logs";
-      toast.error(message);
-    },
   });
 
   const toggleMutation = useMutation<JobSummary | undefined, Error, { jobId: string; enabled: boolean }>({
@@ -191,18 +173,12 @@ export default function ScheduledJobsPage() {
 
       return data?.job;
     },
-    onMutate: ({ jobId }) => {
-      setToggleJobId(jobId);
-    },
     onSuccess: async (_, { enabled }) => {
       await queryClient.invalidateQueries({ queryKey: ["scheduled-jobs"] });
       toast.success(enabled ? "Job enabled" : "Job disabled");
     },
     onError: (error) => {
       toast.error(error.message || "Failed to update job");
-    },
-    onSettled: () => {
-      setToggleJobId(null);
     },
   });
 
@@ -222,9 +198,6 @@ export default function ScheduledJobsPage() {
 
       return data.result;
     },
-    onMutate: ({ jobId }) => {
-      setRunJobId(jobId);
-    },
     onSuccess: async (result, { jobId }) => {
       await queryClient.invalidateQueries({ queryKey: ["scheduled-jobs"] });
       if (selectedJob?.id === jobId) {
@@ -234,9 +207,6 @@ export default function ScheduledJobsPage() {
     },
     onError: (error) => {
       toast.error(error.message || "Failed to run job");
-    },
-    onSettled: () => {
-      setRunJobId(null);
     },
   });
 
@@ -313,19 +283,6 @@ export default function ScheduledJobsPage() {
     };
   }, [jobsQuery.data]);
 
-  const getJobStatusBadge = (job: JobSummary) => {
-    if (!job.enabled) {
-      return <Badge variant="secondary">Disabled</Badge>;
-    }
-    if (job.is_due) {
-      return <Badge variant="destructive">Due</Badge>;
-    }
-    if (job.last_log?.status === 'running') {
-      return <Badge variant="default">Running</Badge>;
-    }
-    return <Badge variant="outline">Scheduled</Badge>;
-  };
-
   const skeletonCards = useMemo(() => (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {[1, 2, 3, 4].map((item) => (
@@ -371,13 +328,13 @@ export default function ScheduledJobsPage() {
                 <Input
                   id="job-name"
                   value={formData.job_name}
-                  onChange={(e) => setForm((f) => ({ ...f, job_name: e.target.value }))}
+                  onChange={(e) => setFormData((f) => ({ ...f, job_name: e.target.value }))}
                   placeholder="daily_data_import"
                 />
               </div>
               <div>
                 <Label htmlFor="job-type">Job Type</Label>
-                <Select value={formData.job_type} onValueChange={(value) => setForm((f) => ({ ...f, job_type: value as JobType }))}>
+                <Select value={formData.job_type} onValueChange={(value) => setFormData((f) => ({ ...f, job_type: value as JobType }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select job type" />
                   </SelectTrigger>
@@ -398,7 +355,7 @@ export default function ScheduledJobsPage() {
                 <Input
                   id="cron-schedule"
                   value={formData.cron_schedule}
-                  onChange={(e) => setForm((f) => ({ ...f, cron_schedule: e.target.value }))}
+                  onChange={(e) => setFormData((f) => ({ ...f, cron_schedule: e.target.value }))}
                   placeholder="0 3 * * *"
                 />
                 <div className="mt-2">
@@ -410,7 +367,7 @@ export default function ScheduledJobsPage() {
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => setForm((f) => ({ ...f, cron_schedule: preset.expression }))}
+                        onClick={() => setFormData((f) => ({ ...f, cron_schedule: preset.expression }))}
                         className="text-xs"
                       >
                         {preset.label}
@@ -427,7 +384,7 @@ export default function ScheduledJobsPage() {
                   onChange={(e) => {
                     try {
                       const config = JSON.parse(e.target.value);
-                      setForm((f) => ({ ...f, config }));
+                      setFormData((f) => ({ ...f, config }));
                     } catch {
                       // Invalid JSON, don't update
                     }
@@ -440,7 +397,7 @@ export default function ScheduledJobsPage() {
                 <Switch
                   id="enabled"
                   checked={formData.enabled}
-                  onCheckedChange={(checked) => setForm((f) => ({ ...f, enabled: checked }))}
+                  onCheckedChange={(checked) => setFormData((f) => ({ ...f, enabled: checked }))}
                 />
                 <Label htmlFor="enabled">Enabled</Label>
               </div>
@@ -564,13 +521,9 @@ export default function ScheduledJobsPage() {
                   <JobStatusCard
                     key={job.id}
                     job={job}
-                    onToggle={(enabled) => toggleMutation.mutate({ jobId: job.id, enabled })}
-                    onRun={() => runMutation.mutate({ jobId: job.id, force: !job.enabled })}
+                    onToggle={(_jobId, enabled) => toggleMutation.mutate({ jobId: job.id, enabled })}
+                    onTrigger={() => runMutation.mutate({ jobId: job.id, force: !job.enabled })}
                     onViewLogs={() => handleViewLogs(job)}
-                    onEdit={() => handleEdit(job)}
-                    onDelete={() => handleDelete(job.id)}
-                    isToggling={toggleJobId === job.id && toggleMutation.isPending}
-                    isRunning={runJobId === job.id && runMutation.isPending}
                   />
                 ))}
               </div>
@@ -588,13 +541,13 @@ export default function ScheduledJobsPage() {
                     <Input
                       id="edit-job-name"
                       value={formData.job_name}
-                      onChange={(e) => setForm((f) => ({ ...f, job_name: e.target.value }))}
+                      onChange={(e) => setFormData((f) => ({ ...f, job_name: e.target.value }))}
                       placeholder="daily_data_import"
                     />
                   </div>
                   <div>
                     <Label htmlFor="edit-job-type">Job Type</Label>
-                    <Select value={formData.job_type} onValueChange={(value) => setForm((f) => ({ ...f, job_type: value as JobType }))}>
+                    <Select value={formData.job_type} onValueChange={(value) => setFormData((f) => ({ ...f, job_type: value as JobType }))}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select job type" />
                       </SelectTrigger>
@@ -615,7 +568,7 @@ export default function ScheduledJobsPage() {
                     <Input
                       id="edit-cron-schedule"
                       value={formData.cron_schedule}
-                      onChange={(e) => setForm((f) => ({ ...f, cron_schedule: e.target.value }))}
+                      onChange={(e) => setFormData((f) => ({ ...f, cron_schedule: e.target.value }))}
                       placeholder="0 3 * * *"
                     />
                   </div>
@@ -627,7 +580,7 @@ export default function ScheduledJobsPage() {
                       onChange={(e) => {
                         try {
                           const config = JSON.parse(e.target.value);
-                          setForm((f) => ({ ...f, config }));
+                          setFormData((f) => ({ ...f, config }));
                         } catch {
                           // Invalid JSON, don't update
                         }
@@ -640,7 +593,7 @@ export default function ScheduledJobsPage() {
                     <Switch
                       id="edit-enabled"
                       checked={formData.enabled}
-                      onCheckedChange={(checked) => setForm((f) => ({ ...f, enabled: checked }))}
+                      onCheckedChange={(checked) => setFormData((f) => ({ ...f, enabled: checked }))}
                     />
                     <Label htmlFor="edit-enabled">Enabled</Label>
                   </div>

@@ -59,6 +59,7 @@ interface MetaPatternsResponse {
 }
 
 const CrossLeague = () => {
+  useDocumentTitle("Cross-League Analysis")
   const [selected, setSelected] = useState<string[]>([])
 
   const leaguesQuery = useQuery({

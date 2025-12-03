@@ -6,6 +6,7 @@ import StatisticsCards from "@/components/dashboard/StatisticsCards";
 import RecentPredictions from "@/components/dashboard/RecentPredictions";
 import PatternPerformanceChart from "@/components/dashboard/PatternPerformanceChart";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 interface Prediction {
   id: string;
@@ -38,6 +39,8 @@ export default function Dashboard() {
     winningStreak: 0,
   });
 
+  useDocumentTitle("Dashboard");
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -46,7 +49,6 @@ export default function Dashboard() {
     try {
       setLoading(true);
 
-      // Fetch predictions with match details
       const { data: predictionsData, error: predictionsError } = await supabase
         .from("predictions")
         .select(`
@@ -67,9 +69,7 @@ export default function Dashboard() {
 
       if (predictionsError) throw predictionsError;
 
-      // Transform the data safely
       const formattedPredictions: Prediction[] = (predictionsData ?? []).map((p: Record<string, unknown>) => {
-        // Handle the nested match data - Supabase returns arrays for joins
         const matchData = Array.isArray(p.match) ? p.match[0] : p.match;
         const matchObj = matchData as Record<string, unknown> | null;
         const homeTeamData = matchObj?.home_team as Record<string, unknown> | Record<string, unknown>[] | null;
@@ -99,7 +99,6 @@ export default function Dashboard() {
 
       setPredictions(formattedPredictions);
 
-      // Calculate statistics
       const { data: allPredictions, error: allPredictionsError } = await supabase
         .from("predictions")
         .select("was_correct");
@@ -111,7 +110,6 @@ export default function Dashboard() {
       const totalEvaluated = evaluatedPredictions.length;
       const accuracy = totalEvaluated > 0 ? Math.round((correctPredictions / totalEvaluated) * 100) : 0;
 
-      // Calculate winning streak
       let currentStreak = 0;
       let maxStreak = 0;
       const sortedPredictions = [...evaluatedPredictions].reverse();
@@ -125,7 +123,6 @@ export default function Dashboard() {
         }
       }
 
-      // Fetch pattern performance
       const { data: patternAccuracy, error: patternError } = await supabase
         .from("pattern_accuracy")
         .select(`
@@ -138,7 +135,6 @@ export default function Dashboard() {
 
       if (patternError) throw patternError;
 
-      // Transform pattern data safely
       const formattedPatternData: PatternData[] = (patternAccuracy ?? []).map((p) => {
         const templateData = Array.isArray(p.template) ? p.template[0] : p.template;
         return {
@@ -149,7 +145,6 @@ export default function Dashboard() {
       });
 
       setPatternData(formattedPatternData);
-
       const topPattern = formattedPatternData[0]?.name || "N/A";
 
       setStats({
@@ -168,22 +163,24 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen bg-background">
         <Sidebar />
         <TopBar />
-        <main className="lg:ml-64 pt-16 lg:pt-0">
-          <div className="container mx-auto px-4 py-8">
-            <div className="mb-8">
-              <Skeleton className="h-12 w-64 mb-2" />
-              <Skeleton className="h-4 w-96" />
+        <main className="ml-0 md:ml-[84px] lg:ml-64 pt-20 lg:pt-0">
+          <div className="container mx-auto px-4 py-12">
+            <div className="mb-12">
+              <Skeleton className="h-10 w-48 mb-2" />
+              <Skeleton className="h-5 w-80" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
               {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-32" />
+                <Skeleton key={i} className="h-40" />
               ))}
             </div>
-            <Skeleton className="h-96 mb-8" />
-            <Skeleton className="h-96" />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Skeleton className="lg:col-span-2 h-96" />
+              <Skeleton className="h-96" />
+            </div>
           </div>
         </main>
       </div>
@@ -191,30 +188,39 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-background">
       <Sidebar />
       <TopBar />
-      <main className="lg:ml-64 pt-16 lg:pt-0">
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gradient-emerald mb-2">
+      <main className="ml-0 md:ml-[84px] lg:ml-64 pt-20 lg:pt-0">
+        <div className="container mx-auto px-4 py-12">
+          {/* Header */}
+          <div className="mb-12">
+            <h1 className="text-4xl lg:text-5xl font-bold text-foreground mb-3">
               Dashboard
             </h1>
-            <p className="text-muted-foreground">
-              Kövesd nyomon a predikciók pontosságát és teljesítményét
+            <p className="text-lg text-muted-foreground">
+              Track your predictions accuracy and performance metrics in real-time
             </p>
           </div>
 
-          <StatisticsCards
-            totalPredictions={stats.totalPredictions}
-            accuracy={stats.accuracy}
-            topPattern={stats.topPattern}
-            winningStreak={stats.winningStreak}
-          />
+          {/* Statistics Cards */}
+          <div className="mb-12">
+            <StatisticsCards
+              totalPredictions={stats.totalPredictions}
+              accuracy={stats.accuracy}
+              topPattern={stats.topPattern}
+              winningStreak={stats.winningStreak}
+            />
+          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <RecentPredictions predictions={predictions} />
-            <PatternPerformanceChart data={patternData} />
+          {/* Charts and Recent Predictions */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <RecentPredictions predictions={predictions} />
+            </div>
+            <div>
+              <PatternPerformanceChart data={patternData} />
+            </div>
           </div>
         </div>
       </main>

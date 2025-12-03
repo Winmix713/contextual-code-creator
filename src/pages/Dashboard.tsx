@@ -68,24 +68,31 @@ export default function Dashboard() {
       if (predictionsError) throw predictionsError;
 
       // Transform the data safely
-      const formattedPredictions: Prediction[] = (predictionsData ?? []).map((p) => {
+      const formattedPredictions: Prediction[] = (predictionsData ?? []).map((p: Record<string, unknown>) => {
         // Handle the nested match data - Supabase returns arrays for joins
         const matchData = Array.isArray(p.match) ? p.match[0] : p.match;
-        const homeTeamData = matchData?.home_team;
-        const awayTeamData = matchData?.away_team;
-        const leagueData = matchData?.league;
+        const matchObj = matchData as Record<string, unknown> | null;
+        const homeTeamData = matchObj?.home_team as Record<string, unknown> | Record<string, unknown>[] | null;
+        const awayTeamData = matchObj?.away_team as Record<string, unknown> | Record<string, unknown>[] | null;
+        const leagueData = matchObj?.league as Record<string, unknown> | Record<string, unknown>[] | null;
+        
+        const getNameFromData = (data: Record<string, unknown> | Record<string, unknown>[] | null): string => {
+          if (!data) return 'Unknown';
+          if (Array.isArray(data)) return (data[0]?.name as string) ?? 'Unknown';
+          return (data.name as string) ?? 'Unknown';
+        };
         
         return {
-          id: p.id,
-          predicted_outcome: p.predicted_outcome,
-          confidence_score: p.confidence_score,
-          actual_outcome: p.actual_outcome,
-          was_correct: p.was_correct,
+          id: p.id as string,
+          predicted_outcome: p.predicted_outcome as string,
+          confidence_score: p.confidence_score as number,
+          actual_outcome: p.actual_outcome as string | null,
+          was_correct: p.was_correct as boolean | null,
           match: {
-            home_team: Array.isArray(homeTeamData) ? homeTeamData[0]?.name ?? 'Unknown' : homeTeamData?.name ?? 'Unknown',
-            away_team: Array.isArray(awayTeamData) ? awayTeamData[0]?.name ?? 'Unknown' : awayTeamData?.name ?? 'Unknown',
-            match_date: matchData?.match_date ?? '',
-            league: Array.isArray(leagueData) ? leagueData[0]?.name ?? 'Unknown' : leagueData?.name ?? 'Unknown',
+            home_team: getNameFromData(homeTeamData),
+            away_team: getNameFromData(awayTeamData),
+            match_date: (matchObj?.match_date as string) ?? '',
+            league: getNameFromData(leagueData),
           },
         };
       });

@@ -1,12 +1,14 @@
 export interface JobLog {
   id: string;
+  job_id?: string;
   started_at: string;
   completed_at: string | null;
-  status: "running" | "success" | "error";
+  status: "running" | "success" | "error" | "failed";
   duration_ms: number | null;
   records_processed: number | null;
   error_message: string | null;
   error_stack?: string | null;
+  output?: string | null;
 }
 
 export interface JobStats {

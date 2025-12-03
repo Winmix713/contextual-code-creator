@@ -1,7 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
-import { ArrowLeft, TrendingUp, Users, Target, Shield, Activity, TrendingDown } from "lucide-react";
+import { ArrowLeft, TrendingUp, Users, Target, Shield, Activity, TrendingDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatCard from "@/components/StatCard";
 import { CSSBadge } from "@/components/CSSBadge";
@@ -9,12 +10,12 @@ import { NarrativeSection } from "@/components/NarrativeSection";
 import TeamPatternsSection from "@/components/patterns/TeamPatternsSection";
 import { StreakAnalysis } from "@/components/analysis/StreakAnalysis";
 import { TransitionMatrixHeatmap } from "@/components/analysis/TransitionMatrixHeatmap";
-import { getMatchHistory } from "@/data/matchHistory";
 import { 
   generateTeamStatistics, 
   calculateHeadToHeadStats, 
   predictWinner,
-  calculatePoissonGoals 
+  calculatePoissonGoals,
+  type MatchResult
 } from "@/lib/teamStatistics";
 
 interface SimpleStat { value: number; color: string }
@@ -32,7 +33,6 @@ interface TeamInfo {
 }
 
 const teamStats: Record<string, TeamInfo> = {
-  // Angol csapatok
   "Aston Oroszlán": {
     league: "angol",
     form: "WWDWL",
@@ -60,96 +60,6 @@ const teamStats: Record<string, TeamInfo> = {
         { name: "Átadások", value: 85 },
         { name: "Kreativitás", value: 80 },
         { name: "Ütemváltás", value: 82 }
-      ]
-    }
-  },
-  "Brentford": {
-    league: "angol",
-    form: "LWDWW",
-    stats: {
-      attack: { value: 76, color: "primary" },
-      defense: { value: 74, color: "primary" },
-      midfield: { value: 75, color: "primary" },
-      overall: { value: 75, color: "primary" }
-    },
-    detailedStats: {
-      "Támadás": [
-        { name: "Lövések", value: 78 },
-        { name: "Gólképesség", value: 75 },
-        { name: "Gyorsaság", value: 77 },
-        { name: "Passz pontosság", value: 74 }
-      ],
-      "Védelem": [
-        { name: "Szerelések", value: 76 },
-        { name: "Labdaszerzések", value: 72 },
-        { name: "Kapus", value: 75 },
-        { name: "Állóképesség", value: 73 }
-      ],
-      "Középpálya": [
-        { name: "Labdabirtoklás", value: 74 },
-        { name: "Átadások", value: 76 },
-        { name: "Kreativitás", value: 73 },
-        { name: "Ütemváltás", value: 77 }
-      ]
-    }
-  },
-  "Brighton": {
-    league: "angol",
-    form: "WDWLW",
-    stats: {
-      attack: { value: 79, color: "primary" },
-      defense: { value: 76, color: "primary" },
-      midfield: { value: 80, color: "primary" },
-      overall: { value: 78, color: "primary" }
-    },
-    detailedStats: {
-      "Támadás": [
-        { name: "Lövések", value: 81 },
-        { name: "Gólképesség", value: 78 },
-        { name: "Gyorsaság", value: 80 },
-        { name: "Passz pontosság", value: 77 }
-      ],
-      "Védelem": [
-        { name: "Szerelések", value: 77 },
-        { name: "Labdaszerzések", value: 75 },
-        { name: "Kapus", value: 78 },
-        { name: "Állóképesség", value: 76 }
-      ],
-      "Középpálya": [
-        { name: "Labdabirtoklás", value: 82 },
-        { name: "Átadások", value: 81 },
-        { name: "Kreativitás", value: 78 },
-        { name: "Ütemváltás", value: 79 }
-      ]
-    }
-  },
-  "Chelsea": {
-    league: "angol",
-    form: "WWWDL",
-    stats: {
-      attack: { value: 87, color: "primary" },
-      defense: { value: 82, color: "primary" },
-      midfield: { value: 85, color: "primary" },
-      overall: { value: 85, color: "primary" }
-    },
-    detailedStats: {
-      "Támadás": [
-        { name: "Lövések", value: 89 },
-        { name: "Gólképesség", value: 86 },
-        { name: "Gyorsaság", value: 88 },
-        { name: "Passz pontosság", value: 85 }
-      ],
-      "Védelem": [
-        { name: "Szerelések", value: 83 },
-        { name: "Labdaszerzések", value: 81 },
-        { name: "Kapus", value: 84 },
-        { name: "Állóképesség", value: 82 }
-      ],
-      "Középpálya": [
-        { name: "Labdabirtoklás", value: 86 },
-        { name: "Átadások", value: 87 },
-        { name: "Kreativitás", value: 84 },
-        { name: "Ütemváltás", value: 85 }
       ]
     }
   },
@@ -183,37 +93,6 @@ const teamStats: Record<string, TeamInfo> = {
       ]
     }
   },
-  "Manchester Kék": {
-    league: "angol",
-    form: "WWDWW",
-    stats: {
-      attack: { value: 91, color: "primary" },
-      defense: { value: 86, color: "primary" },
-      midfield: { value: 89, color: "primary" },
-      overall: { value: 89, color: "primary" }
-    },
-    detailedStats: {
-      "Támadás": [
-        { name: "Lövések", value: 93 },
-        { name: "Gólképesség", value: 90 },
-        { name: "Gyorsaság", value: 92 },
-        { name: "Passz pontosság", value: 89 }
-      ],
-      "Védelem": [
-        { name: "Szerelések", value: 87 },
-        { name: "Labdaszerzések", value: 85 },
-        { name: "Kapus", value: 88 },
-        { name: "Állóképesség", value: 86 }
-      ],
-      "Középpálya": [
-        { name: "Labdabirtoklás", value: 90 },
-        { name: "Átadások", value: 91 },
-        { name: "Kreativitás", value: 88 },
-        { name: "Ütemváltás", value: 89 }
-      ]
-    }
-  },
-  // Spanyol csapatok
   "Barcelona": {
     league: "spanyol",
     form: "WWWDW",
@@ -243,40 +122,9 @@ const teamStats: Record<string, TeamInfo> = {
         { name: "Ütemváltás", value: 92 }
       ]
     }
-  },
-  "Madrid Fehér": {
-    league: "spanyol",
-    form: "WWWWW",
-    stats: {
-      attack: { value: 94, color: "primary" },
-      defense: { value: 87, color: "primary" },
-      midfield: { value: 91, color: "primary" },
-      overall: { value: 91, color: "primary" }
-    },
-    detailedStats: {
-      "Támadás": [
-        { name: "Lövések", value: 96 },
-        { name: "Gólképesség", value: 93 },
-        { name: "Gyorsaság", value: 95 },
-        { name: "Passz pontosság", value: 92 }
-      ],
-      "Védelem": [
-        { name: "Szerelések", value: 88 },
-        { name: "Labdaszerzések", value: 86 },
-        { name: "Kapus", value: 89 },
-        { name: "Állóképesség", value: 87 }
-      ],
-      "Középpálya": [
-        { name: "Labdabirtoklás", value: 92 },
-        { name: "Átadások", value: 93 },
-        { name: "Kreativitás", value: 90 },
-        { name: "Ütemváltás", value: 91 }
-      ]
-    }
   }
 };
 
-// Add default stats for teams not explicitly defined
 const getTeamStats = (teamName: string) => {
   if (teamStats[teamName]) return teamStats[teamName];
   
@@ -318,17 +166,65 @@ const getStatColor = (value: number) => {
   return "text-destructive";
 };
 
+// Generate mock match history based on team strength
+const generateMockMatches = (teamName: string, _overallStrength: number): MatchResult[] => {
+  const matches: MatchResult[] = [];
+  const opponents = ["Team A", "Team B", "Team C", "Team D", "Team E"];
+  
+  for (let i = 0; i < 10; i++) {
+    const isHome = i % 2 === 0;
+    const homeGoals = Math.floor(Math.random() * 4);
+    const awayGoals = Math.floor(Math.random() * 3);
+    const teamGoals = isHome ? homeGoals : awayGoals;
+    const oppGoals = isHome ? awayGoals : homeGoals;
+    
+    let result: "W" | "D" | "L";
+    if (teamGoals > oppGoals) result = "W";
+    else if (teamGoals < oppGoals) result = "L";
+    else result = "D";
+    
+    matches.push({
+      homeTeam: isHome ? teamName : opponents[i % opponents.length],
+      awayTeam: isHome ? opponents[i % opponents.length] : teamName,
+      homeGoals,
+      awayGoals,
+      isHome,
+      result,
+      opponent: opponents[i % opponents.length],
+      date: new Date(Date.now() - i * 7 * 24 * 60 * 60 * 1000).toISOString()
+    });
+  }
+  
+  return matches;
+};
+
 const TeamDetail = () => {
   const { teamName } = useParams<{ teamName: string }>();
   const navigate = useNavigate();
   const team = getTeamStats(teamName || "");
+  const [matches, setMatches] = useState<MatchResult[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  // Get match history and calculate statistics
-  const matches = getMatchHistory(teamName || "", team.stats.overall.value);
+  useEffect(() => {
+    // Generate mock matches synchronously for now
+    const mockMatches = generateMockMatches(teamName || "", team.stats.overall.value);
+    setMatches(mockMatches);
+    setLoading(false);
+  }, [teamName, team.stats.overall.value]);
+  
+  // Calculate statistics from matches
   const statistics = generateTeamStatistics(matches);
   const headToHead = calculateHeadToHeadStats(matches);
   const prediction = predictWinner(matches);
   const poissonGoals = calculatePoissonGoals(matches);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -411,6 +307,7 @@ const TeamDetail = () => {
               <TeamPatternsSection teamName={teamName || ""} />
               <StreakAnalysis teamName={teamName || ""} />
               <TransitionMatrixHeatmap teamName={teamName || ""} />
+              
               {/* Basic Match Statistics */}
               <StatCard
                 title="Alapvető Mérkőzésstatisztikák"
@@ -457,7 +354,7 @@ const TeamDetail = () => {
                 ]}
               />
 
-              {/* Win Probability (Elo Model) */}
+              {/* Win Probability */}
               <StatCard
                 title="Győzelmi Valószínűségek (Elo-modell)"
                 icon={<TrendingUp className="w-5 h-5 text-primary" />}
@@ -499,42 +396,18 @@ const TeamDetail = () => {
                 </div>
               ))}
 
-              {/* CSS Badge - Kognitív Stabilitás Score */}
+              {/* CSS Badge */}
               <div className="rounded-2xl bg-card ring-1 ring-border p-6">
                 <h3 className="text-lg font-semibold text-foreground mb-4">Kognitív Stabilitás Score (CSS)</h3>
                 <div className="flex justify-center">
-                  <CSSBadge
-                    score={8.7}
-                    dataQuality={9.0}
-                    confidence={8.5}
-                    context={8.0}
-                    badge="Magas"
-                    trend="up"
-                  />
+                  <CSSBadge score={87} />
                 </div>
               </div>
 
-              {/* Narrative Section - Szakértői Elemzés */}
+              {/* Narrative Section */}
               <NarrativeSection
-                narrative={`A(z) ${teamName} kiváló formában van, várható gólok száma: ${statistics.expectedGoals.toFixed(1)} mérkőzésenként. A csapat formindexe ${statistics.formIndex.toFixed(0)}%, ami erős teljesítményre utal. ${prediction.prediction === "Hazai győzelem" ? "Hazai pályán erős esélyekkel rendelkezik" : prediction.prediction === "Vendég győzelem" ? "Vendégként is megbízható" : "Kiegyensúlyozott teljesítményre számíthatunk"}. Az előrejelzés megbízhatósága Magas (CSS: 8.7/10), ami azt jelenti, hogy az adatminőség és a modell bizonyossága egyaránt kiemelkedő.`}
-                supportingFactors={[
-                  `Form index: ${statistics.formIndex.toFixed(0)}% (${statistics.formIndex >= 70 ? "kiváló forma" : "közepes forma"})`,
-                  `Várható gólok: ${statistics.expectedGoals.toFixed(1)} mérkőzésenként`,
-                  `${headToHead.wins.toFixed(0)}% győzelmi arány az utolsó mérkőzéseken`,
-                  `Mindkét csapat góllövése: ${statistics.bothTeamsScored.toFixed(0)}% valószínűség`,
-                  `${prediction.prediction} várható (${prediction.confidence}% bizonyossággal)`
-                ]}
-                riskFactors={[
-                  "Előző mérkőzés fáradtság hatása",
-                  `Vendég teljesítmény variabilitás (${headToHead.losses.toFixed(0)}% vereség arány)`,
-                  "Várható gól eltérések a különböző környezetekben"
-                ]}
-                bettingSuggestions={{
-                  high: prediction.prediction,
-                  medium: `Over ${statistics.avgGoalsPerMatch.toFixed(1)} gól`,
-                  low: "Pontos eredmény (kockázatos)"
-                }}
-                cssScore={8.7}
+                title="Szakértői Elemzés"
+                content={`A(z) ${teamName} kiváló formában van, várható gólok száma: ${statistics.expectedGoals.toFixed(1)} mérkőzésenként. A csapat formindexe ${statistics.formIndex.toFixed(0)}%, ami erős teljesítményre utal. ${prediction.prediction === "Győzelem" ? "Hazai pályán erős esélyekkel rendelkezik" : prediction.prediction === "Vereség" ? "Vendégként is megbízható" : "Kiegyensúlyozott teljesítményre számíthatunk"}. Az előrejelzés megbízhatósága Magas (CSS: 8.7/10), ami azt jelenti, hogy az adatminőség és a modell bizonyossága egyaránt kiemelkedő.`}
               />
             </div>
           </div>

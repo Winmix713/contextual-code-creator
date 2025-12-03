@@ -4,8 +4,8 @@ import { Badge } from "@/components/ui/badge";
 
 export interface JobLog {
   id: string;
-  job_id: string;
-  status: 'success' | 'failed' | 'running';
+  job_id?: string;
+  status: 'success' | 'failed' | 'running' | 'error';
   started_at: string;
   completed_at?: string | null;
   duration_ms?: number | null;

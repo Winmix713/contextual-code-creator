@@ -79,8 +79,6 @@ export function useEdgeFunctionQuery<T = unknown>({
   refetchInterval,
   staleTime,
 }: UseEdgeFunctionQueryOptions<T>) {
-  const { toast } = useToast()
-
   return useQuery<ApiResponse<T>, Error, T | null>({
     queryKey: [functionName, options],
     queryFn: async () => {

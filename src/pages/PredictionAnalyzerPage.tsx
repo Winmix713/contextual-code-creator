@@ -3,7 +3,7 @@ import { usePredictionAnalyzer } from '@/hooks/useEdgeFunction';
 import PredictionAccuracyChart from '@/components/predictions/PredictionAccuracyChart';
 import LeagueBreakdownChart from '@/components/predictions/LeagueBreakdownChart';
 import ConfidenceCalibrationChart from '@/components/predictions/ConfidenceCalibrationChart';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -52,7 +52,7 @@ const PredictionAnalyzerPage: React.FC = () => {
   });
   const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [selectedLeague, setSelectedLeague] = useState<string>('');
-  const [showAllMetrics, setShowAllMetrics] = useState(true);
+  const showAllMetrics = true;
 
   const { data: analyzerData, isLoading, error } = usePredictionAnalyzer(
     showAllMetrics

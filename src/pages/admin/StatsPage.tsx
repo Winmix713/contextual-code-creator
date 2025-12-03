@@ -259,7 +259,7 @@ export default function StatsPage() {
                     <YAxis allowDecimals={false} tick={{ fill: "hsl(215, 20%, 65%)" }} />
                     <Tooltip contentStyle={{ backgroundColor: "hsl(11, 11%, 8%)", border: "1px solid hsl(215, 20%, 17%)", color: "hsl(210, 40%, 98%)" }} />
                     <Bar dataKey="count" radius={[8, 8, 0, 0]}>
-                      {goalHistogram.map((entry, index) => (
+                      {goalHistogram.map((_, index) => (
                         <Cell key={`cell-${index}`} fill="hsl(160, 84%, 39%)" />
                       ))}
                     </Bar>

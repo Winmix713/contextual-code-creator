@@ -1,5 +1,5 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PredictionReviewPanel } from "@/components/admin/model-status/PredictionReviewPanel";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import PredictionReviewPanel from "@/components/admin/model-status/PredictionReviewPanel";
 import { AlertCircle } from "lucide-react";
 
 const HUNGARIAN_LABELS = {

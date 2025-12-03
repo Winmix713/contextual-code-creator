@@ -86,7 +86,7 @@ export const usePhase9Settings = () => {
 
   const mutation = useMutation<AdminPhase9Settings, Error, Partial<AdminPhase9SettingsInput>>({
     mutationFn: upsertPhase9Settings,
-    onSuccess: async (data, variables) => {
+    onSuccess: async (_data, variables) => {
       await queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY });
       toast.success("Phase 9 settings saved");
       await log("phase9_updated", variables);

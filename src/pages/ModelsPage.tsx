@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { RefreshCcw, Play, Pause, Trash2, Edit, Plus, Settings, Activity, Zap, Shield } from "lucide-react";
+import { RefreshCcw, Play, Pause, Plus, Settings, Activity, Zap, Shield } from "lucide-react";
 import AuthGate from "@/components/AuthGate";
 import ModelCard from "@/components/models/ModelCard";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { listModels, registerModel, promoteChallenger, createExperiment, evaluateExperiment, epsilonGreedySelect, updateModel, deleteModel } from "@/integrations/models/service";
 import type { ModelExperiment, ModelRegistry } from "@/types/models";
 import type { ModelAction } from "@/types/admin";
@@ -42,8 +40,6 @@ export default function ModelsPage() {
   useDocumentTitle("Models • WinMix TipsterHub");
   const queryClient = useQueryClient();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<ModelRegistry | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [showInactive, setShowInactive] = useState(false);
@@ -292,7 +288,7 @@ export default function ModelsPage() {
 
   const testSelection = async () => {
     const result = await epsilonGreedySelect(0.1);
-    toast.success(`Selected model: ${result.selectedModelId} (${result.strategy})`);
+    toast.success(`Selected model: ${result.id} (${result.strategy})`);
   };
 
   const resetForm = () => {
@@ -368,7 +364,6 @@ export default function ModelsPage() {
   const models = filteredModels;
   const champion = models.find((m) => m.model_type === "champion") || null;
   const challengers = models.filter((m) => m.model_type === "challenger");
-  const retired = models.filter((m) => m.model_type === "retired");
 
   const COLORS = ["#10b981", "#f59e0b", "#6366f1", "#ef4444", "#14b8a6"];
 

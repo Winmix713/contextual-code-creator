@@ -159,18 +159,18 @@ const CrossLeague = () => {
   }, [heatmapQuery.data])
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <Sidebar />
       <TopBar />
-      <main className="ml-0 md:ml-[84px] py-10 sm:py-14">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
+      <main className="ml-0 md:ml-[84px] lg:ml-64 pt-20 lg:pt-0">
+        <div className="container mx-auto px-4 py-12 space-y-8">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full ring-1 ring-primary/20 bg-primary/10 px-2.5 py-1 mb-2">
-              <Network className="w-3.5 h-3.5 text-primary" />
-              <span className="text-[11px] text-primary font-semibold">Cross-League Intelligence</span>
+            <div className="inline-flex items-center gap-2 rounded-full ring-1 ring-primary/20 bg-primary/10 px-3 py-1.5 mb-4">
+              <Network className="w-4 h-4 text-primary" />
+              <span className="text-xs text-primary font-semibold uppercase tracking-wide">Cross-League</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl tracking-tight text-foreground font-semibold">Liga-közi elemzés</h1>
-            <p className="text-muted-foreground mt-1">Korrelációk, meta-patternök és liga-normalizált metrikák.</p>
+            <h1 className="text-4xl lg:text-5xl font-bold text-foreground mb-3">Cross-League Analysis</h1>
+            <p className="text-lg text-muted-foreground">Compare leagues, identify correlations, and discover meta-patterns across competitions</p>
           </div>
 
           <div className="flex items-center gap-2">

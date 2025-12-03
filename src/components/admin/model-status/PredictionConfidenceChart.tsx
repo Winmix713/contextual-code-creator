@@ -18,14 +18,16 @@ interface ConfidenceDataPoint {
 interface PredictionConfidenceChartProps {
   data?: ConfidenceDataPoint[];
   title?: string;
+  className?: string;
 }
 
 export const PredictionConfidenceChart = ({
   data = [],
   title = "Prediction Confidence Over Time",
+  className,
 }: PredictionConfidenceChartProps) => {
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>

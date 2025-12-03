@@ -2,6 +2,18 @@ import type React from "react"
 import type { LucideIcon } from "lucide-react"
 import type { JobSummary } from "@/types/jobs"
 
+// Re-export job types for backward compatibility
+export type {
+  JobSummary,
+  JobLog,
+  JobStats,
+  JobListResponse,
+  JobLogsResponse,
+  JobToggleResponse,
+  JobTriggerResponse,
+  JobExecutionResult,
+} from "@/types/jobs"
+
 // Environment Variables Types
 export interface EnvironmentVariable {
   id: string

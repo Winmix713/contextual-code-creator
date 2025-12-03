@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Brain, Network, Radar, RefreshCcw, Copy } from "lucide-react"
 import { CopyButton } from "@/components/common"
+import { useDocumentTitle } from "@/hooks/useDocumentTitle"
 
 interface LeagueRow {
   id: string

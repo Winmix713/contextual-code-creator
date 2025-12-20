@@ -1,65 +1,160 @@
+import { memo, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
-import ToastPortal from "@/components/ui/ToastPortal";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter } from "react-router-dom";
-import { AuthProvider } from "@/providers/AuthProvider";
-import { FeatureFlagsProvider } from "@/providers/FeatureFlagsProvider";
-import AppRoutes from "@/components/AppRoutes";
-import ErrorBoundary from "@/components/ErrorBoundary";
-import logger from "@/lib/logger";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-// Sentry csak akkor hívódik meg, ha létezik (opcionális import vagy mock)
-const captureExceptionSafe = (error: any, context?: any) => {
-  // Itt lehetne Sentry.captureException(error, context);
-  // De mivel nincs a kódban, csak logolunk
-  if (import.meta.env.PROD) {
-    console.error("Sentry capture:", error, context);
-  }
-};
+// Lazy load pages for code splitting
+const Index = lazy(() => import("./pages/Index"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient({
+// ==================== CONFIGURATION ====================
+const QUERY_CLIENT_CONFIG = {
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000,
-      gcTime: 10 * 60 * 1000,
-      retry: (failureCount, error: any) => {
-        if (error?.status >= 400 && error?.status < 500) return false;
-        return failureCount < 3;
-      },
-      refetchOnWindowFocus: import.meta.env.DEV,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      cacheTime: 1000 * 60 * 10, // 10 minutes
+      refetchOnWindowFocus: false,
       refetchOnReconnect: true,
+      retry: 1,
     },
     mutations: {
       retry: 1,
-      onError: (error) => {
-        logger.error("Mutation error:", error);
-      },
     },
   },
+} as const;
+
+const TOOLTIP_CONFIG = {
+  delayDuration: 300,
+  skipDelayDuration: 0,
+} as const;
+
+// ==================== QUERY CLIENT ====================
+const queryClient = new QueryClient(QUERY_CLIENT_CONFIG);
+
+// ==================== ROUTE CONFIGURATION ====================
+interface RouteConfig {
+  path: string;
+  element: JSX.Element;
+  protected?: boolean;
+}
+
+const routes: RouteConfig[] = [
+  {
+    path: "/",
+    element: <Index />,
+  },
+  // ADD MORE ROUTES HERE
+  // {
+  //   path: "/about",
+  //   element: <About />,
+  // },
+  // {
+  //   path: "/dashboard",
+  //   element: <Dashboard />,
+  //   protected: true,
+  // },
+];
+
+// ==================== ROUTE LOADING FALLBACK ====================
+const RouteLoadingFallback = memo(() => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+));
+
+RouteLoadingFallback.displayName = "RouteLoadingFallback";
+
+// ==================== PROTECTED ROUTE WRAPPER ====================
+interface ProtectedRouteProps {
+  children: JSX.Element;
+}
+
+const ProtectedRoute = memo<ProtectedRouteProps>(({ children }) => {
+  // TODO: Implement authentication check
+  const isAuthenticated = true; // Replace with actual auth check
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
 });
 
-const App = () => (
-  <ErrorBoundary
-    onError={(error, info) => {
-      logger.error("Unhandled UI error", error);
-      captureExceptionSafe(error, { componentStack: info.componentStack });
-    }}
-  >
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <BrowserRouter>
-          <FeatureFlagsProvider>
-            <AuthProvider>
-              <AppRoutes />
-              <ToastPortal />
-              <Toaster />
-            </AuthProvider>
-          </FeatureFlagsProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ErrorBoundary>
-);
+ProtectedRoute.displayName = "ProtectedRoute";
+
+// ==================== APP PROVIDERS ====================
+interface AppProvidersProps {
+  children: React.ReactNode;
+}
+
+const AppProviders = memo<AppProvidersProps>(({ children }) => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider {...TOOLTIP_CONFIG}>
+      {children}
+      <Toaster />
+      <Sonner />
+      {process.env.NODE_ENV === "development" && (
+        <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
+      )}
+    </TooltipProvider>
+  </QueryClientProvider>
+));
+
+AppProviders.displayName = "AppProviders";
+
+// ==================== APP ROUTES ====================
+const AppRoutes = memo(() => (
+  <Routes>
+    {routes.map(({ path, element, protected: isProtected }) => (
+      <Route
+        key={path}
+        path={path}
+        element={
+          <Suspense fallback={<RouteLoadingFallback />}>
+            {isProtected ? <ProtectedRoute>{element}</ProtectedRoute> : element}
+          </Suspense>
+        }
+      />
+    ))}
+
+    {/* 404 - Must be last */}
+    <Route
+      path="*"
+      element={
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <NotFound />
+        </Suspense>
+      }
+    />
+  </Routes>
+));
+
+AppRoutes.displayName = "AppRoutes";
+
+// ==================== MAIN APP COMPONENT ====================
+const App = memo(() => (
+  <AppProviders>
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
+  </AppProviders>
+));
+
+App.displayName = "App";
 
 export default App;
+
+// ==================== PERFORMANCE MONITORING (OPTIONAL) ====================
+if (process.env.NODE_ENV === "development") {
+  // Web Vitals monitoring (v5 API)
+  import("web-vitals").then(({ onCLS, onINP, onFCP, onLCP, onTTFB }) => {
+    onCLS(console.log);
+    onINP(console.log);
+    onFCP(console.log);
+    onLCP(console.log);
+    onTTFB(console.log);
+  });
+}

@@ -164,8 +164,7 @@ class StorageManager {
     try {
       const stored = localStorage.getItem(CUSTOM_PRESETS_KEY);
       return stored ? JSON.parse(stored) : [];
-    } catch (error) {
-      console.error('Failed to load custom presets:', error);
+    } catch {
       return [];
     }
   }
@@ -173,8 +172,7 @@ class StorageManager {
   static saveCustomPresets(presets: Preset[]): void {
     try {
       localStorage.setItem(CUSTOM_PRESETS_KEY, JSON.stringify(presets));
-    } catch (error) {
-      console.error('Failed to save custom presets:', error);
+    } catch {
       toast({
         title: "Tárolási hiba",
         description: "Nem sikerült menteni a presetet a helyi tárolóba.",

@@ -398,7 +398,6 @@ export const pushToHistory = <T>(
   maxSize: number = DEFAULT_CONFIG.maxSize
 ): HistoryState<T> => {
   if (!HistoryValidator.isValid(history)) {
-    console.warn('Invalid history state provided, sanitizing...');
     history = HistoryValidator.sanitize(history);
   }
 
@@ -410,7 +409,6 @@ export const pushToHistory = <T>(
  */
 export const undoHistory = <T>(history: HistoryState<T>): HistoryState<T> | null => {
   if (!HistoryValidator.isValid(history)) {
-    console.error('Invalid history state for undo');
     return null;
   }
 
@@ -422,7 +420,6 @@ export const undoHistory = <T>(history: HistoryState<T>): HistoryState<T> | null
  */
 export const redoHistory = <T>(history: HistoryState<T>): HistoryState<T> | null => {
   if (!HistoryValidator.isValid(history)) {
-    console.error('Invalid history state for redo');
     return null;
   }
 
@@ -437,12 +434,10 @@ export const jumpToHistory = <T>(
   entryId: string
 ): HistoryState<T> | null => {
   if (!HistoryValidator.isValid(history)) {
-    console.error('Invalid history state for jump');
     return null;
   }
 
   if (!entryId || typeof entryId !== 'string') {
-    console.error('Invalid entry ID provided');
     return null;
   }
 
@@ -454,7 +449,6 @@ export const jumpToHistory = <T>(
  */
 export const getHistoryStats = <T>(history: HistoryState<T>): HistoryStats => {
   if (!HistoryValidator.isValid(history)) {
-    console.warn('Invalid history state for stats');
     return {
       pastCount: 0,
       futureCount: 0,

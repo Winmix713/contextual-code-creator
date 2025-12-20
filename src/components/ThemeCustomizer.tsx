@@ -78,8 +78,8 @@ export const ThemeCustomizer = () => {
           try {
             const imported = JSON.parse(ev.target?.result as string);
             updateTheme(imported);
-          } catch (err) {
-            console.error('Érvénytelen téma fájl');
+          } catch {
+            // Invalid theme file - silently ignore
           }
         };
         reader.readAsText(file);

@@ -198,8 +198,8 @@ export const ClayEditor = memo(() => {
       await navigator.clipboard.writeText(cssCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy CSS:', err);
+    } catch {
+      // Clipboard API not available - silently ignore
     }
   }, [cssCode]);
 

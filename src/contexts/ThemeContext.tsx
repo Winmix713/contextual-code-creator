@@ -283,8 +283,7 @@ const loadStateFromStorage = (): EffectState => {
     if (!stored) return defaultEffectState;
     const parsed = JSON.parse(stored);
     return { ...defaultEffectState, ...parsed };
-  } catch (error) {
-    console.error('Failed to load effect state from storage:', error);
+  } catch {
     return defaultEffectState;
   }
 };
@@ -292,8 +291,8 @@ const loadStateFromStorage = (): EffectState => {
 const saveStateToStorage = (state: EffectState): void => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch (error) {
-    console.error('Failed to save effect state to storage:', error);
+  } catch {
+    // Storage not available - silently ignore
   }
 };
 
@@ -474,8 +473,7 @@ export const EffectProvider = ({ children }: { children: ReactNode }) => {
       const newState = { ...defaultEffectState, ...parsed };
       pushHistory(newState, 'State imported');
       return true;
-    } catch (error) {
-      console.error('Failed to import state:', error);
+    } catch {
       return false;
     }
   }, [pushHistory]);

@@ -1,10 +1,12 @@
 import { useEffects, GlassSettings, NeomorphSettings, ClaySettings, GlowSettings } from '@/contexts/ThemeContext';
-import { Sparkles, Check, Save, Upload, Trash2, Download, LucideIcon } from 'lucide-react';
+import { Sparkles, Save, Upload, Download, LucideIcon } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { VirtualizedPresetGrid } from './VirtualizedPresetGrid';
+import { useDebouncedCallback } from '@/hooks/useDebounce';
 
 // ==================== TÍPUSDEFINÍCIÓK ====================
 interface PresetSettings {
@@ -159,6 +161,8 @@ const DEFAULT_PRESETS: readonly Preset[] = [
 ] as const;
 
 // ==================== HELPER FUNKCIÓK ====================
+const DEBOUNCE_DELAY = 500;
+
 class StorageManager {
   static loadCustomPresets(): Preset[] {
     try {
@@ -166,18 +170,6 @@ class StorageManager {
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
-    }
-  }
-
-  static saveCustomPresets(presets: Preset[]): void {
-    try {
-      localStorage.setItem(CUSTOM_PRESETS_KEY, JSON.stringify(presets));
-    } catch {
-      toast({
-        title: "Tárolási hiba",
-        description: "Nem sikerült menteni a presetet a helyi tárolóba.",
-        variant: "destructive",
-      });
     }
   }
 }
@@ -331,88 +323,6 @@ const SaveDialog = memo<SaveDialogProps>(({ open, onOpenChange, onSave }) => {
 
 SaveDialog.displayName = 'SaveDialog';
 
-const PresetCard = memo<PresetCardProps>(({ 
-  preset, 
-  isSelected, 
-  onApply, 
-  onDelete 
-}) => (
-  <div
-    onClick={onApply}
-    role="button"
-    tabIndex={0}
-    onKeyDown={(e) => e.key === 'Enter' && onApply()}
-    className="preset-card group p-3 text-left relative transition-transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-    aria-label={`${preset.name} preset alkalmazása`}
-    data-testid={`preset-card-${preset.id}`}
-  >
-    {/* Törlés gomb egyéni preseteknél */}
-    {preset.isCustom && onDelete && (
-      <button
-        onClick={onDelete}
-        className="absolute top-2 right-2 p-1 rounded bg-destructive/80 hover:bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity z-10"
-        aria-label={`${preset.name} törlése`}
-        data-testid={`button-delete-preset-${preset.id}`}
-      >
-        <Trash2 className="w-3 h-3" />
-      </button>
-    )}
-    
-    {/* Előnézet gradiens */}
-    <div 
-      className="h-16 rounded-lg mb-2 relative overflow-hidden"
-      style={{ background: preset.preview.gradient }}
-    >
-      <div className="absolute inset-0 bg-black/20" />
-      {isSelected && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-          <div className="p-1.5 rounded-full bg-primary">
-            <Check className="w-3 h-3 text-primary-foreground" />
-          </div>
-        </div>
-      )}
-      {preset.isCustom && (
-        <div className="absolute top-1 left-1 px-1.5 py-0.5 text-[8px] rounded bg-primary/80 text-primary-foreground font-medium">
-          Egyéni
-        </div>
-      )}
-    </div>
-    
-    {/* Információ */}
-    <div className="space-y-0.5">
-      <div className="flex items-center gap-1.5">
-        <div 
-          className="w-2 h-2 rounded-full"
-          style={{ backgroundColor: preset.preview.borderColor }}
-          aria-hidden="true"
-        />
-        <span className="text-xs font-medium text-foreground group-hover:text-primary transition-colors">
-          {preset.name}
-        </span>
-      </div>
-      <p className="text-[10px] text-muted-foreground line-clamp-1">
-        {preset.description}
-      </p>
-    </div>
-    
-    {/* Aktív effekt jelzők */}
-    <div className="flex gap-1 mt-2 flex-wrap">
-      {Object.entries(preset.settings.activeEffects).map(([effect, isActive]) => (
-        isActive && (
-          <span 
-            key={effect}
-            className="px-1.5 py-0.5 text-[9px] rounded bg-secondary text-muted-foreground capitalize"
-          >
-            {effect}
-          </span>
-        )
-      ))}
-    </div>
-  </div>
-));
-
-PresetCard.displayName = 'PresetCard';
-
 // ==================== FŐ KOMPONENS ====================
 export const PresetsGallery = memo(() => {
   const { 
@@ -472,6 +382,19 @@ export const PresetsGallery = memo(() => {
     applyEffectChanges
   ]);
 
+  // Debounced localStorage save for custom presets
+  const debouncedSavePresets = useDebouncedCallback((presets: Preset[]) => {
+    try {
+      localStorage.setItem(CUSTOM_PRESETS_KEY, JSON.stringify(presets));
+    } catch {
+      toast({
+        title: "Tárolási hiba",
+        description: "Nem sikerült menteni a presetet a helyi tárolóba.",
+        variant: "destructive",
+      });
+    }
+  }, DEBOUNCE_DELAY);
+
   // Save current as preset
   const handleSavePreset = useCallback((name: string, description: string) => {
     const newPreset = PresetGenerator.createCustomPreset(name, description, {
@@ -483,7 +406,7 @@ export const PresetsGallery = memo(() => {
     });
 
     const updatedPresets = [...customPresets, newPreset];
-    StorageManager.saveCustomPresets(updatedPresets);
+    debouncedSavePresets(updatedPresets);
     setCustomPresets(updatedPresets);
     setSaveDialogOpen(false);
 
@@ -491,13 +414,13 @@ export const PresetsGallery = memo(() => {
       title: "Preset elmentve",
       description: `"${newPreset.name}" sikeresen mentve.`,
     });
-  }, [customPresets, state]);
+  }, [customPresets, state, debouncedSavePresets]);
 
   // Delete custom preset
   const deleteCustomPreset = useCallback((presetId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const updated = customPresets.filter(p => p.id !== presetId);
-    StorageManager.saveCustomPresets(updated);
+    debouncedSavePresets(updated);
     setCustomPresets(updated);
     if (selectedPreset === presetId) setSelectedPreset(null);
     
@@ -505,7 +428,7 @@ export const PresetsGallery = memo(() => {
       title: "Preset törölve", 
       description: "Az egyéni preset eltávolítva." 
     });
-  }, [customPresets, selectedPreset]);
+  }, [customPresets, selectedPreset, debouncedSavePresets]);
 
   // Export settings
   const exportSettings = useCallback(() => {
@@ -604,18 +527,13 @@ export const PresetsGallery = memo(() => {
         />
       </div>
 
-      {/* Presets Grid */}
-      <div className="grid grid-cols-2 gap-3">
-        {allPresets.map((preset) => (
-          <PresetCard
-            key={preset.id}
-            preset={preset}
-            isSelected={selectedPreset === preset.id}
-            onApply={() => applyPreset(preset)}
-            onDelete={preset.isCustom ? (e) => deleteCustomPreset(preset.id, e) : undefined}
-          />
-        ))}
-      </div>
+      {/* Presets Grid - Virtualized for large lists */}
+      <VirtualizedPresetGrid
+        presets={allPresets as Preset[]}
+        selectedPreset={selectedPreset}
+        onApply={applyPreset}
+        onDelete={deleteCustomPreset}
+      />
 
       {allPresets.length === DEFAULT_PRESETS.length && (
         <p className="text-xs text-center text-muted-foreground pt-2">

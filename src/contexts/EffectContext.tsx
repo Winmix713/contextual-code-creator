@@ -5,6 +5,7 @@ import React, {
   useCallback, 
   useMemo, 
   useEffect,
+  useRef,
   ReactNode 
 } from 'react';
 import { 
@@ -148,13 +149,28 @@ const loadStateFromStorage = (): EffectState => {
   }
 };
 
-const saveStateToStorage = (state: EffectState): void => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // Storage not available
-  }
+// Debounced storage save to reduce write operations
+const DEBOUNCE_DELAY = 500;
+
+const createDebouncedSave = () => {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  
+  return (state: EffectState) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    
+    timeoutId = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch {
+        // Storage not available or quota exceeded
+      }
+    }, DEBOUNCE_DELAY);
+  };
 };
+
+const debouncedSaveToStorage = createDebouncedSave();
 
 const clamp = (value: number, min: number, max: number): number => {
   return Math.min(Math.max(value, min), max);
@@ -183,8 +199,9 @@ export const EffectProvider = ({ children }: { children: ReactNode }) => {
 
   const state = historyState.present;
 
+  // Debounced save to localStorage
   useEffect(() => {
-    saveStateToStorage(state);
+    debouncedSaveToStorage(state);
   }, [state]);
 
   const pushHistory = useCallback((newState: EffectState, label: string) => {

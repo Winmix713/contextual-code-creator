@@ -80,6 +80,14 @@ const Index = () => {
                   <div className="flex items-center gap-1.5 text-xs text-primary">
                     <Sparkles className="w-3 h-3" />
                     <span className="font-medium">Effect Studio</span>
+                    <span className="mx-1.5 text-border">|</span>
+                    <Link
+                      to="/studio"
+                      className="inline-flex items-center gap-1 text-accent hover:text-accent/80 transition-colors font-medium"
+                    >
+                      <PenTool className="w-3 h-3" />
+                      Studio
+                    </Link>
                   </div>
                 </div>
               </div>

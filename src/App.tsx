@@ -47,16 +47,10 @@ const routes: RouteConfig[] = [
     path: "/",
     element: <Index />,
   },
-  // ADD MORE ROUTES HERE
-  // {
-  //   path: "/about",
-  //   element: <About />,
-  // },
-  // {
-  //   path: "/dashboard",
-  //   element: <Dashboard />,
-  //   protected: true,
-  // },
+  {
+    path: "/studio",
+    element: <Studio />,
+  },
 ];
 
 // ==================== ROUTE LOADING FALLBACK ====================

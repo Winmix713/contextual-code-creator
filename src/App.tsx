@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 // Lazy load pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
+const Studio = lazy(() => import("./pages/Studio"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // ==================== CONFIGURATION ====================

@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 // Lazy load pages for code splitting
 const Index = lazy(() => import("./pages/Index"));
+const Studio = lazy(() => import("./pages/Studio"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // ==================== CONFIGURATION ====================
@@ -46,16 +47,10 @@ const routes: RouteConfig[] = [
     path: "/",
     element: <Index />,
   },
-  // ADD MORE ROUTES HERE
-  // {
-  //   path: "/about",
-  //   element: <About />,
-  // },
-  // {
-  //   path: "/dashboard",
-  //   element: <Dashboard />,
-  //   protected: true,
-  // },
+  {
+    path: "/studio",
+    element: <Studio />,
+  },
 ];
 
 // ==================== ROUTE LOADING FALLBACK ====================
@@ -96,7 +91,7 @@ const AppProviders = memo<AppProvidersProps>(({ children }) => (
       {children}
       <Toaster />
       <Sonner />
-      {process.env.NODE_ENV === "development" && (
+      {import.meta.env.DEV && (
         <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
       )}
     </TooltipProvider>
@@ -148,7 +143,7 @@ App.displayName = "App";
 export default App;
 
 // ==================== PERFORMANCE MONITORING (OPTIONAL) ====================
-if (process.env.NODE_ENV === "development") {
+if (import.meta.env.DEV) {
   // Web Vitals monitoring (v5 API)
   import("web-vitals").then(({ onCLS, onINP, onFCP, onLCP, onTTFB }) => {
     onCLS(console.log);

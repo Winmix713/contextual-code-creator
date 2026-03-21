@@ -9,9 +9,10 @@ import { PresetsGallery } from "@/components/PresetsGallery";
 import { ExportPanel } from "@/components/ExportPanel";
 import { QuickActionsPanel } from "@/components/QuickActionsPanel";
 import { useState } from "react";
-import { Settings, Layers, Sparkles, Code, Zap } from "lucide-react";
+import { Settings, Layers, Sparkles, Code, Zap, PenTool } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Link } from "react-router-dom";
 
 type RightPanel = 'actions' | 'theme' | 'inspector' | 'presets' | 'export';
 
@@ -77,6 +78,14 @@ const Index = () => {
                   <div className="flex items-center gap-1.5 text-xs text-primary">
                     <Sparkles className="w-3 h-3" />
                     <span className="font-medium">Effect Studio</span>
+                    <span className="mx-1.5 text-border">|</span>
+                    <Link
+                      to="/studio"
+                      className="inline-flex items-center gap-1 text-accent hover:text-accent/80 transition-colors font-medium"
+                    >
+                      <PenTool className="w-3 h-3" />
+                      Studio
+                    </Link>
                   </div>
                 </div>
               </div>

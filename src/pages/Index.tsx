@@ -9,7 +9,10 @@ import { PresetsGallery } from "@/components/PresetsGallery";
 import { ExportPanel } from "@/components/ExportPanel";
 import { QuickActionsPanel } from "@/components/QuickActionsPanel";
 import { useState } from "react";
-import { Settings, Layers, Sparkles, Code, Zap } from "lucide-react";
+import { Settings, Layers, Sparkles, Code, Zap, PenTool } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Link } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 

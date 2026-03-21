@@ -96,7 +96,7 @@ const AppProviders = memo<AppProvidersProps>(({ children }) => (
       {children}
       <Toaster />
       <Sonner />
-      {process.env.NODE_ENV === "development" && (
+      {import.meta.env.DEV && (
         <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
       )}
     </TooltipProvider>

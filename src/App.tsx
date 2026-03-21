@@ -148,7 +148,7 @@ App.displayName = "App";
 export default App;
 
 // ==================== PERFORMANCE MONITORING (OPTIONAL) ====================
-if (process.env.NODE_ENV === "development") {
+if (import.meta.env.DEV) {
   // Web Vitals monitoring (v5 API)
   import("web-vitals").then(({ onCLS, onINP, onFCP, onLCP, onTTFB }) => {
     onCLS(console.log);
